@@ -90,12 +90,41 @@ Todos los `tests/*.log` están creados (uno por categoría) y listos para
 
 ## Pendiente
 
-- 5 dashboards `.ndjson` (Overview, Threats, VPN, IPS, Administration)
-- `docs/mitre.md`, `docs/logid-reference.md`, `docs/troubleshooting.md`
-- `INSTALL.md`, `CHANGELOG.md`, `LICENSE`
 - Para llegar a las 150+ reglas previstas originalmente: ampliar
   granularidad (más firmas IPS por categoría, más anomalías DoS
   específicas por tipo de flood, reglas por franja horaria en VPN, etc.)
+- Los dashboards `.ndjson` (ver abajo) no se han probado contra una
+  instancia real de OpenSearch/Wazuh Dashboard — revisa el aviso en la
+  sección correspondiente.
+
+## Dashboards (`dashboards/*.ndjson`)
+
+Generados con `scripts/generate_dashboards.py` (formato saved-objects de
+OpenSearch Dashboards / Kibana). Cada archivo es autocontenido: incluye su
+propio `index-pattern` (`wazuh-alerts-*`, id `wazuh-alerts-fortigate`), sus
+visualizaciones y el dashboard que las agrupa. JSON de cada línea y las
+referencias internas están validadas automáticamente (ver script).
+
+| Dashboard | Contenido |
+|---|---|
+| **FortiGate Overview** | Timeline general, eventos por categoría, top 10 IP origen, distribución por nivel de regla |
+| **FortiGate Threats** | Timeline de amenazas (AV/webfilter/DNS/DoS/correlación), top malware, top categorías webfilter bloqueadas, alertas de correlación multi-etapa |
+| **FortiGate VPN** | Timeline VPN, top usuarios y orígenes, alertas de fuerza bruta, VPN por acción |
+| **FortiGate IPS** | Timeline IPS, severidad, top firmas, top atacantes, ataques alta/crítica no bloqueados |
+| **FortiGate Administration** | Timeline admin/sistema/HA, top usuarios admin, logins por estado, eventos HA recientes, cuentas no autorizadas |
+
+Importación: **Stack Management → Saved Objects → Import** (ver
+`INSTALL.md`, paso 7).
+
+> **Aviso**: estos `.ndjson` se generaron programáticamente siguiendo el
+> esquema estándar de saved objects (visState tipo `histogram`/`pie`/
+> `table`/`metric`) pero **no se han importado ni probado contra una
+> instancia real** de OpenSearch Dashboards 2.x en este entorno (sin
+> acceso de red). Es razonablemente probable que funcionen tal cual, pero
+> si el import falla por incompatibilidad de versión de `migrationVersion`
+> o `coreMigrationVersion`, lo más rápido suele ser recrear manualmente 1-2
+> visualizaciones de referencia en tu propia instancia y comparar el
+> saved-object exportado con el generado aquí para ajustar el formato.
 
 ## Cómo probar (Wazuh manager en Oracle Linux 9.5)
 
