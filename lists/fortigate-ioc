@@ -4,3 +4,6 @@ Russia
 Iran
 China
 Syria
+# IPs maliciosas conocidas (ejemplo) - lookup="address_match_key"
+198.51.100.5
+203.0.113.77

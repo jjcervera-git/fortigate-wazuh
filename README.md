@@ -32,9 +32,25 @@ Integración FortiGate FortiOS 7.4 ↔ Wazuh 4.14 / OpenSearch 2.x sobre Oracle 
 - `tests/vpn.log`: 13 eventos (fuerza bruta de 5 intentos, login posterior,
   sesión concurrente desde otra IP, flapping IPsec de 5 errores).
 
+## Estado actual — Fase 3 (entregada)
+
+- Decoder `fortigate-ips` ampliado con `crscore`, `crlevel`, `profile`,
+  `incidentserialno`.
+- `rules/1007-fortigate-ips.xml`: 12 reglas — severidad (low/medium/high/
+  critical), ataque no bloqueado vs bloqueado, ataques repetidos desde
+  mismo origen (recon), mismo ataque repetido contra mismo destino
+  (explotación persistente), categorías por texto de firma (web attack,
+  fuerza bruta, C2/backdoor), y correlación con lista IOC por IP
+  (`address_match_key`). MITRE: T1190, T1210, T1595.002, T1110, T1071, T1105,
+  T1059.
+- `lists/fortigate-ioc` ampliada con IPs de ejemplo para el lookup por
+  dirección (además de los países ya existentes para el lookup por texto).
+- `tests/ips.log`: 7 eventos (RCE crítico no bloqueado, ataques web
+  repetidos desde el mismo origen, tráfico C2 detectado).
+
 ## Pendiente (fases siguientes)
 
-Los archivos `rules/1007` a `1015` y `1099-fortigate-correlation.xml`,
+Los archivos `rules/1008` a `1015` y `1099-fortigate-correlation.xml`,
 los dashboards `.ndjson` y la documentación completa (`docs/mitre.md`,
 `docs/logid-reference.md`, `docs/troubleshooting.md`, `INSTALL.md`,
 `CHANGELOG.md`, `LICENSE`) **todavía no se han generado** — se irán
@@ -44,7 +60,6 @@ severidad 3–15) para llegar a las 150+ reglas previstas:
 
 | Archivo | Contenido previsto |
 |---|---|
-| `1007-fortigate-ips.xml` | Firmas IPS por severidad, ataques repetidos, CVEs críticos |
 | `1008-fortigate-antivirus.xml` | Detección malware/ransomware, uso de `lists/fortigate-malware` |
 | `1009-fortigate-webfilter.xml` | Categorías bloqueadas, C2/phishing, DLP básico |
 | `1010-fortigate-dns.xml` | DNS a dominios maliciosos, DGA, tunneling DNS |

@@ -212,6 +212,18 @@
 
   <regex offset="after_parent">\s+action="([^"]+)"</regex>
   <order>ips_action</order>
+
+  <regex offset="after_parent">\s+crscore=(\d+)</regex>
+  <order>crscore</order>
+
+  <regex offset="after_parent">\s+crlevel="([^"]+)"</regex>
+  <order>crlevel</order>
+
+  <regex offset="after_parent">\s+profile="([^"]+)"</regex>
+  <order>profile</order>
+
+  <regex offset="after_parent">\s+incidentserialno=(\d+)</regex>
+  <order>incidentserialno</order>
 </decoder>
 
 <!-- ============================================================= -->

@@ -1,0 +1,150 @@
+<group name="fortigate,fortigate_ips,">
+
+  <!-- ============================================================= -->
+  <!-- REGLA BASE                                                     -->
+  <!-- ============================================================= -->
+  <rule id="100700" level="0">
+    <decoded_as>fortigate-ips</decoded_as>
+    <description>FortiGate: evento IPS.</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- POR SEVERIDAD DE LA FIRMA                                      -->
+  <!-- ============================================================= -->
+  <rule id="100701" level="4">
+    <if_sid>100700</if_sid>
+    <field name="severity">low|information</field>
+    <description>FortiGate IPS: firma de severidad baja "$attack" $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>fortigate_ips_low,</group>
+  </rule>
+
+  <rule id="100702" level="7">
+    <if_sid>100700</if_sid>
+    <field name="severity">medium</field>
+    <description>FortiGate IPS: firma de severidad media "$attack" $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>fortigate_ips_medium,</group>
+  </rule>
+
+  <rule id="100703" level="10">
+    <if_sid>100700</if_sid>
+    <field name="severity">high</field>
+    <description>FortiGate IPS: firma de severidad alta "$attack" $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1190</id>
+      <id>T1210</id>
+    </mitre>
+    <group>fortigate_ips_high,pci_dss_11.4,</group>
+  </rule>
+
+  <rule id="100704" level="12">
+    <if_sid>100700</if_sid>
+    <field name="severity">critical</field>
+    <description>FortiGate IPS: firma CRITICA "$attack" $srcip -> $dstip. Requiere atencion inmediata.</description>
+    <mitre>
+      <id>T1190</id>
+      <id>T1210</id>
+    </mitre>
+    <group>fortigate_ips_critical,pci_dss_11.4,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- ACCION DEL IPS: PERMITIDO (DETECTADO) VS BLOQUEADO             -->
+  <!-- ============================================================= -->
+  <rule id="100705" level="13">
+    <if_sid>100703,100704</if_sid>
+    <field name="ips_action">pass|detected|monitored</field>
+    <description>FortiGate IPS: ataque de severidad alta/critica "$attack" NO fue bloqueado ($ips_action) $srcip -> $dstip. Revisar exposicion.</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>fortigate_ips_not_blocked,attack,</group>
+  </rule>
+
+  <rule id="100706" level="6">
+    <if_sid>100700</if_sid>
+    <field name="ips_action">dropped|blocked|reset|clear_session</field>
+    <description>FortiGate IPS: ataque "$attack" bloqueado correctamente ($ips_action) $srcip -> $dstip.</description>
+    <group>fortigate_ips_blocked,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- REPETICION DE ATAQUES DESDE EL MISMO ORIGEN                    -->
+  <!-- ============================================================= -->
+  <rule id="100707" level="12" frequency="5" timeframe="180">
+    <if_matched_sid>100700</if_matched_sid>
+    <same_srcip />
+    <description>FortiGate IPS: 5+ firmas IPS distintas disparadas desde $srcip en 3 min. Posible escaneo de vulnerabilidades / exploit kit.</description>
+    <mitre>
+      <id>T1595.002</id>
+      <id>T1190</id>
+    </mitre>
+    <group>fortigate_ips_scanning,recon,pci_dss_11.4,</group>
+  </rule>
+
+  <rule id="100708" level="13" frequency="3" timeframe="300">
+    <if_matched_sid>100700</if_matched_sid>
+    <same_field>attack</same_field>
+    <same_dstip />
+    <description>FortiGate IPS: el mismo ataque "$attack" se repite 3+ veces contra $dstip. Posible intento de explotacion persistente.</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>fortigate_ips_persistent_attack,attack,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- CATEGORIAS DE ATAQUE ESPECIFICAS (por texto de la firma)       -->
+  <!-- ============================================================= -->
+  <rule id="100709" level="12">
+    <if_sid>100700</if_sid>
+    <field name="attack" type="pcre2">(?i)(sql.?injection|xss|cross.site.scripting|rce|remote.code.execution|command.injection|directory.traversal|path.traversal)</field>
+    <description>FortiGate IPS: patron de explotacion de aplicacion web detectado "$attack" $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1190</id>
+      <id>T1059</id>
+    </mitre>
+    <group>fortigate_ips_webattack,attack,pci_dss_6.5,</group>
+  </rule>
+
+  <rule id="100710" level="11">
+    <if_sid>100700</if_sid>
+    <field name="attack" type="pcre2">(?i)(brute.?force|credential)</field>
+    <description>FortiGate IPS: patron de fuerza bruta/credenciales detectado por IPS "$attack" $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+    <group>fortigate_ips_bruteforce,</group>
+  </rule>
+
+  <rule id="100711" level="12">
+    <if_sid>100700</if_sid>
+    <field name="attack" type="pcre2">(?i)(backdoor|c2|command.and.control|botnet|trojan)</field>
+    <description>FortiGate IPS: posible trafico de C2/backdoor detectado "$attack" $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1071</id>
+      <id>T1105</id>
+    </mitre>
+    <group>fortigate_ips_c2,attack,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- ORIGEN LISTADO COMO IOC                                        -->
+  <!-- ============================================================= -->
+  <rule id="100712" level="14">
+    <if_sid>100703,100704</if_sid>
+    <list field="srcip" lookup="address_match_key">etc/lists/fortigate-ioc</list>
+    <description>FortiGate IPS: ataque de severidad alta/critica desde IP listada como IOC ($srcip) contra $dstip.</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>fortigate_ips_ioc_match,threat_intel,attack,</group>
+  </rule>
+
+</group>
