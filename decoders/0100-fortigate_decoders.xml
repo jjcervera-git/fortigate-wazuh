@@ -1,0 +1,344 @@
+<!--
+  FortiGate FortiOS 7.4 - Decoders para Wazuh 4.14
+  Formato de log: syslog key=value (RFC5424/RFC3164), ej:
+
+  date=2026-07-09 time=10:15:23 devname="FGT-EDGE01" devid="FG100FTK20012345"
+  eventtime=1720520123 tz="+0200" logid="0000000013" type="traffic"
+  subtype="forward" level="notice" vd="root" srcip=192.168.1.10 ...
+
+  Estrategia: un decoder raiz ("fortigate") que reconoce la cabecera comun
+  (date/time/devname/devid), un decoder de cabecera que extrae los campos
+  comunes a TODOS los logtypes (logid, type, subtype, level, vd, eventtime),
+  y decoders hijos por type/subtype que fijan el "decoder.name" que usan
+  las reglas (fortigate-firewall-v5, fortigate-vpn, fortigate-ips, etc.)
+
+  Cada decoder hijo usa multiples <regex offset="after_parent"> + <order>
+  para extraer campos clave=valor sin importar el orden/posicion en el
+  log (los logs de FortiOS no garantizan orden fijo de campos opcionales).
+-->
+
+<!-- ============================================================= -->
+<!-- 1. DECODER RAIZ                                                -->
+<!-- ============================================================= -->
+<decoder name="fortigate">
+  <prematch>^date=\d\d\d\d-\d\d-\d\d time=\d\d:\d\d:\d\d</prematch>
+</decoder>
+
+<!-- ============================================================= -->
+<!-- 2. CABECERA COMUN (devname, devid, logid, type, subtype, etc.) -->
+<!--    Se aplica a TODOS los logs de FortiGate                     -->
+<!-- ============================================================= -->
+<decoder name="fortigate-header">
+  <parent>fortigate</parent>
+  <use_own_name>no</use_own_name>
+
+  <regex offset="after_parent">\s+devname="([^"]+)"</regex>
+  <order>devname</order>
+
+  <regex offset="after_parent">\s+devid="([^"]+)"</regex>
+  <order>devid</order>
+
+  <regex offset="after_parent">\s+eventtime=(\d+)</regex>
+  <order>eventtime</order>
+
+  <regex offset="after_parent">\s+tz="([^"]+)"</regex>
+  <order>tz</order>
+
+  <regex offset="after_parent">\s+logid="?(\d+)"?</regex>
+  <order>logid</order>
+
+  <regex offset="after_parent">\s+type="([^"]+)"</regex>
+  <order>type</order>
+
+  <regex offset="after_parent">\s+subtype="([^"]+)"</regex>
+  <order>subtype</order>
+
+  <regex offset="after_parent">\s+level="([^"]+)"</regex>
+  <order>level</order>
+
+  <regex offset="after_parent">\s+vd="([^"]+)"</regex>
+  <order>vd</order>
+
+  <regex offset="after_parent">\s+action="([^"]+)"</regex>
+  <order>action</order>
+
+  <regex offset="after_parent">\s+msg="([^"]+)"</regex>
+  <order>msg</order>
+</decoder>
+
+<!-- ============================================================= -->
+<!-- 3. FIREWALL / TRAFFIC (type=traffic) - Decoder oficial:        -->
+<!--    fortigate-firewall-v5                                       -->
+<!-- ============================================================= -->
+<decoder name="fortigate-firewall-v5">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="traffic"</regex>
+</decoder>
+
+<decoder name="fortigate-firewall-v5">
+  <parent>fortigate-firewall-v5</parent>
+  <use_own_name>yes</use_own_name>
+
+  <regex offset="after_parent">\s+srcip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>srcip</order>
+
+  <regex offset="after_parent">\s+srcport=(\d+)</regex>
+  <order>srcport</order>
+
+  <regex offset="after_parent">\s+srcintf="([^"]+)"</regex>
+  <order>srcintf</order>
+
+  <regex offset="after_parent">\s+dstip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>dstip</order>
+
+  <regex offset="after_parent">\s+dstport=(\d+)</regex>
+  <order>dstport</order>
+
+  <regex offset="after_parent">\s+dstintf="([^"]+)"</regex>
+  <order>dstintf</order>
+
+  <regex offset="after_parent">\s+proto=(\d+)</regex>
+  <order>protocol</order>
+
+  <regex offset="after_parent">\s+policyid=(\d+)</regex>
+  <order>policyid</order>
+
+  <regex offset="after_parent">\s+policyname="([^"]+)"</regex>
+  <order>policyname</order>
+
+  <regex offset="after_parent">\s+service="([^"]+)"</regex>
+  <order>service</order>
+
+  <regex offset="after_parent">\s+srccountry="([^"]+)"</regex>
+  <order>srccountry</order>
+
+  <regex offset="after_parent">\s+dstcountry="([^"]+)"</regex>
+  <order>dstcountry</order>
+
+  <regex offset="after_parent">\s+sentbyte=(\d+)</regex>
+  <order>sentbyte</order>
+
+  <regex offset="after_parent">\s+rcvdbyte=(\d+)</regex>
+  <order>rcvdbyte</order>
+
+  <regex offset="after_parent">\s+duration=(\d+)</regex>
+  <order>duration</order>
+
+  <regex offset="after_parent">\s+sessionid=(\d+)</regex>
+  <order>sessionid</order>
+
+  <regex offset="after_parent">\s+crlevel="([^"]+)"</regex>
+  <order>crlevel</order>
+</decoder>
+
+<!-- ============================================================= -->
+<!-- 4. VPN (type=vpn)                                              -->
+<!-- ============================================================= -->
+<decoder name="fortigate-vpn">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="vpn"</regex>
+</decoder>
+
+<decoder name="fortigate-vpn">
+  <parent>fortigate-vpn</parent>
+  <use_own_name>yes</use_own_name>
+
+  <regex offset="after_parent">\s+remip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>srcip</order>
+
+  <regex offset="after_parent">\s+locip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>dstip</order>
+
+  <regex offset="after_parent">\s+user="([^"]+)"</regex>
+  <order>user</order>
+
+  <regex offset="after_parent">\s+remotewanaddr=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>remotewanaddr</order>
+
+  <regex offset="after_parent">\s+tunneltype="([^"]+)"</regex>
+  <order>tunneltype</order>
+
+  <regex offset="after_parent">\s+tunnelid=(\d+)</regex>
+  <order>tunnelid</order>
+
+  <regex offset="after_parent">\s+reason="([^"]+)"</regex>
+  <order>reason</order>
+</decoder>
+
+<!-- ============================================================= -->
+<!-- 5. IPS (type=utm subtype=ips)                                  -->
+<!-- ============================================================= -->
+<decoder name="fortigate-ips">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="utm" subtype="ips"</regex>
+</decoder>
+
+<decoder name="fortigate-ips">
+  <parent>fortigate-ips</parent>
+  <use_own_name>yes</use_own_name>
+
+  <regex offset="after_parent">\s+srcip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>srcip</order>
+
+  <regex offset="after_parent">\s+dstip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>dstip</order>
+
+  <regex offset="after_parent">\s+attack="([^"]+)"</regex>
+  <order>attack</order>
+
+  <regex offset="after_parent">\s+severity="([^"]+)"</regex>
+  <order>severity</order>
+
+  <regex offset="after_parent">\s+ref="([^"]+)"</regex>
+  <order>ref</order>
+
+  <regex offset="after_parent">\s+action="([^"]+)"</regex>
+  <order>ips_action</order>
+</decoder>
+
+<!-- ============================================================= -->
+<!-- 6. ANTIVIRUS (type=utm subtype=virus)                          -->
+<!-- ============================================================= -->
+<decoder name="fortigate-antivirus">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="utm" subtype="virus"</regex>
+</decoder>
+
+<decoder name="fortigate-antivirus">
+  <parent>fortigate-antivirus</parent>
+  <use_own_name>yes</use_own_name>
+
+  <regex offset="after_parent">\s+srcip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>srcip</order>
+
+  <regex offset="after_parent">\s+dstip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>dstip</order>
+
+  <regex offset="after_parent">\s+virus="([^"]+)"</regex>
+  <order>virus</order>
+
+  <regex offset="after_parent">\s+filename="([^"]+)"</regex>
+  <order>filename</order>
+
+  <regex offset="after_parent">\s+url="([^"]+)"</regex>
+  <order>url</order>
+</decoder>
+
+<!-- ============================================================= -->
+<!-- 7. WEBFILTER (type=utm subtype=webfilter)                      -->
+<!-- ============================================================= -->
+<decoder name="fortigate-webfilter">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="utm" subtype="webfilter"</regex>
+</decoder>
+
+<decoder name="fortigate-webfilter">
+  <parent>fortigate-webfilter</parent>
+  <use_own_name>yes</use_own_name>
+
+  <regex offset="after_parent">\s+srcip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>srcip</order>
+
+  <regex offset="after_parent">\s+hostname="([^"]+)"</regex>
+  <order>hostname</order>
+
+  <regex offset="after_parent">\s+url="([^"]+)"</regex>
+  <order>url</order>
+
+  <regex offset="after_parent">\s+catdesc="([^"]+)"</regex>
+  <order>catdesc</order>
+</decoder>
+
+<!-- ============================================================= -->
+<!-- 8. DNS (type=utm subtype=dns)                                  -->
+<!-- ============================================================= -->
+<decoder name="fortigate-dns">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="utm" subtype="dns"</regex>
+</decoder>
+
+<decoder name="fortigate-dns">
+  <parent>fortigate-dns</parent>
+  <use_own_name>yes</use_own_name>
+
+  <regex offset="after_parent">\s+srcip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>srcip</order>
+
+  <regex offset="after_parent">\s+qname="([^"]+)"</regex>
+  <order>qname</order>
+
+  <regex offset="after_parent">\s+qtype="([^"]+)"</regex>
+  <order>qtype</order>
+</decoder>
+
+<!-- ============================================================= -->
+<!-- 9. APPLICATION CONTROL (type=utm subtype=app-ctrl)             -->
+<!-- ============================================================= -->
+<decoder name="fortigate-application">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="utm" subtype="app-ctrl"</regex>
+</decoder>
+
+<decoder name="fortigate-application">
+  <parent>fortigate-application</parent>
+  <use_own_name>yes</use_own_name>
+
+  <regex offset="after_parent">\s+srcip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>srcip</order>
+
+  <regex offset="after_parent">\s+dstip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>dstip</order>
+
+  <regex offset="after_parent">\s+app="([^"]+)"</regex>
+  <order>app</order>
+
+  <regex offset="after_parent">\s+appcat="([^"]+)"</regex>
+  <order>appcat</order>
+</decoder>
+
+<!-- ============================================================= -->
+<!-- 10. ADMIN / EVENT (type=event subtype=system o subtype=vpn)   -->
+<!-- ============================================================= -->
+<decoder name="fortigate-admin">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="event" subtype="system"</regex>
+</decoder>
+
+<decoder name="fortigate-admin">
+  <parent>fortigate-admin</parent>
+  <use_own_name>yes</use_own_name>
+
+  <regex offset="after_parent">\s+user="([^"]+)"</regex>
+  <order>user</order>
+
+  <regex offset="after_parent">\s+ui="([^"]+)"</regex>
+  <order>ui</order>
+
+  <regex offset="after_parent">\s+srcip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>srcip</order>
+
+  <regex offset="after_parent">\s+method="([^"]+)"</regex>
+  <order>method</order>
+
+  <regex offset="after_parent">\s+status="([^"]+)"</regex>
+  <order>status</order>
+
+  <regex offset="after_parent">\s+reason="([^"]+)"</regex>
+  <order>reason</order>
+</decoder>
+
+<!-- ============================================================= -->
+<!-- 11. SYSTEM / HA (type=event subtype=ha)                        -->
+<!-- ============================================================= -->
+<decoder name="fortigate-ha">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="event" subtype="ha"</regex>
+</decoder>
+
+<decoder name="fortigate-ha">
+  <parent>fortigate-ha</parent>
+  <use_own_name>yes</use_own_name>
+
+  <regex offset="after_parent">\s+msg="([^"]+)"</regex>
+  <order>msg</order>
+</decoder>

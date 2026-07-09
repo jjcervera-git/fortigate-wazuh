@@ -1,0 +1,138 @@
+<group name="fortigate,fortigate_firewall,">
+
+  <!-- ============================================================= -->
+  <!-- REGLA BASE: todo log decodificado como trafico FortiGate       -->
+  <!-- ============================================================= -->
+  <rule id="100500" level="0">
+    <decoded_as>fortigate-firewall-v5</decoded_as>
+    <description>FortiGate: evento de trafico (firewall).</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- TRAFICO PERMITIDO                                              -->
+  <!-- ============================================================= -->
+  <rule id="100501" level="3">
+    <if_sid>100500</if_sid>
+    <field name="action">accept</field>
+    <description>FortiGate: conexion permitida $srcip:$srcport -> $dstip:$dstport ($service).</description>
+    <group>fortigate_firewall_accept,gdpr_IV_30.1.g,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- TRAFICO DENEGADO / BLOQUEADO POR POLITICA                      -->
+  <!-- ============================================================= -->
+  <rule id="100502" level="5">
+    <if_sid>100500</if_sid>
+    <field name="action">deny|blocked|close|timeout|drop</field>
+    <description>FortiGate: conexion denegada/bloqueada $srcip:$srcport -> $dstip:$dstport ($service).</description>
+    <mitre>
+      <id>T1046</id>
+    </mitre>
+    <group>fortigate_firewall_deny,pci_dss_10.6.1,pci_dss_11.4,</group>
+  </rule>
+
+  <rule id="100503" level="8" frequency="8" timeframe="60">
+    <if_matched_sid>100502</if_matched_sid>
+    <same_srcip />
+    <description>FortiGate: multiples conexiones denegadas desde $srcip en poco tiempo (posible escaneo).</description>
+    <mitre>
+      <id>T1595</id>
+      <id>T1046</id>
+    </mitre>
+    <group>fortigate_firewall_scan,recon,pci_dss_11.4,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- CATEGORIA DE RIESGO (crlevel de FortiGuard - critical/high)    -->
+  <!-- ============================================================= -->
+  <rule id="100504" level="10">
+    <if_sid>100500</if_sid>
+    <field name="crlevel">critical|high</field>
+    <description>FortiGate: trafico clasificado como riesgo $crlevel por FortiGuard $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1071</id>
+    </mitre>
+    <group>fortigate_firewall_risk,pci_dss_11.4,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- PAISES DE ALTO RIESGO (lista externa)                          -->
+  <!-- ============================================================= -->
+  <rule id="100505" level="6">
+    <if_sid>100500</if_sid>
+    <field name="action">accept</field>
+    <list field="srccountry" lookup="match_key">etc/lists/fortigate-ioc</list>
+    <description>FortiGate: conexion permitida desde pais/origen listado en IOC ($srccountry) - $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1071</id>
+    </mitre>
+    <group>fortigate_firewall_geoip,threat_intel,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- TRANSFERENCIAS DE DATOS INUSUALMENTE GRANDES (posible exfil)   -->
+  <!-- ============================================================= -->
+  <rule id="100506" level="9">
+    <if_sid>100501</if_sid>
+    <field name="sentbyte" type="pcre2">^([5-9]\d{8}|\d{10,})$</field>
+    <description>FortiGate: transferencia saliente inusualmente grande ($sentbyte bytes) $srcip -> $dstip. Posible exfiltracion.</description>
+    <mitre>
+      <id>T1041</id>
+    </mitre>
+    <group>fortigate_firewall_exfil,pci_dss_10.6.1,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- SESIONES DE LARGA DURACION (posible tunel/C2)                  -->
+  <!-- ============================================================= -->
+  <rule id="100507" level="7">
+    <if_sid>100501</if_sid>
+    <field name="duration" type="pcre2">^([3-9]\d{4,}|\d{6,})$</field>
+    <description>FortiGate: sesion de larga duracion detectada ($duration s) $srcip -> $dstip ($service). Posible tunel o C2.</description>
+    <mitre>
+      <id>T1071</id>
+      <id>T1571</id>
+    </mitre>
+    <group>fortigate_firewall_longsession,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- USO DE SERVICIOS/PUERTOS SENSIBLES (lista externa)             -->
+  <!-- ============================================================= -->
+  <rule id="100508" level="6">
+    <if_sid>100501</if_sid>
+    <list field="dstport" lookup="match_key">etc/lists/fortigate-services</list>
+    <description>FortiGate: acceso a servicio sensible en puerto $dstport ($service) $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1021</id>
+    </mitre>
+    <group>fortigate_firewall_sensitive_service,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- CORRELACION: ESCANEO SEGUIDO DE CONEXION EXITOSA               -->
+  <!-- ============================================================= -->
+  <rule id="100509" level="12" frequency="1" timeframe="300">
+    <if_matched_sid>100503</if_matched_sid>
+    <if_sid>100501</if_sid>
+    <same_srcip />
+    <description>FortiGate: conexion permitida desde $srcip tras patron de escaneo previo. Posible compromiso post-recon.</description>
+    <mitre>
+      <id>T1046</id>
+      <id>T1190</id>
+    </mitre>
+    <group>fortigate_firewall_correlation,attack,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- INTERFAZ/POLITICA SIN NOMBRE ("implicit deny")                 -->
+  <!-- ============================================================= -->
+  <rule id="100510" level="4">
+    <if_sid>100502</if_sid>
+    <field name="policyid">^0$</field>
+    <description>FortiGate: trafico bloqueado por politica implicita (implicit deny) $srcip -> $dstip.</description>
+    <group>fortigate_firewall_implicit_deny,</group>
+  </rule>
+
+</group>
