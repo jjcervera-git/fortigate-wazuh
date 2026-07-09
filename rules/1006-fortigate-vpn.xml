@@ -1,0 +1,128 @@
+<group name="fortigate,fortigate_vpn,">
+
+  <!-- ============================================================= -->
+  <!-- REGLA BASE                                                     -->
+  <!-- ============================================================= -->
+  <rule id="100600" level="0">
+    <decoded_as>fortigate-vpn</decoded_as>
+    <description>FortiGate: evento de VPN (SSL-VPN / IPsec).</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- SSL-VPN: LOGIN FALLIDO                                         -->
+  <!-- ============================================================= -->
+  <rule id="100601" level="5">
+    <if_sid>100600</if_sid>
+    <field name="action">ssl-login-fail|sslvpn-login-fail</field>
+    <description>FortiGate SSL-VPN: intento de login fallido - usuario "$login" desde $srcip.</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+    <group>fortigate_vpn_login_fail,authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+  <rule id="100602" level="10" frequency="5" timeframe="120">
+    <if_matched_sid>100601</if_matched_sid>
+    <same_srcip />
+    <description>FortiGate SSL-VPN: posible ataque de fuerza bruta contra VPN desde $srcip (5 fallos en 2 min).</description>
+    <mitre>
+      <id>T1110.001</id>
+    </mitre>
+    <group>fortigate_vpn_bruteforce,authentication_failures,pci_dss_11.4,</group>
+  </rule>
+
+  <rule id="100603" level="10" frequency="5" timeframe="120">
+    <if_matched_sid>100601</if_matched_sid>
+    <same_field>login</same_field>
+    <description>FortiGate SSL-VPN: multiples intentos fallidos contra la cuenta "$login" desde distintos origenes (posible password spraying).</description>
+    <mitre>
+      <id>T1110.003</id>
+    </mitre>
+    <group>fortigate_vpn_bruteforce,authentication_failures,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- SSL-VPN: LOGIN CORRECTO                                        -->
+  <!-- ============================================================= -->
+  <rule id="100604" level="3">
+    <if_sid>100600</if_sid>
+    <field name="action">ssl-login|tunnel-up</field>
+    <description>FortiGate SSL-VPN: login/tunel establecido - usuario "$login" desde $srcip.</description>
+    <group>fortigate_vpn_login_success,gdpr_IV_30.1.g,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- CORRELACION: LOGIN CORRECTO TRAS FUERZA BRUTA                  -->
+  <!-- ============================================================= -->
+  <rule id="100605" level="13" frequency="1" timeframe="300">
+    <if_matched_sid>100602</if_matched_sid>
+    <if_sid>100604</if_sid>
+    <same_srcip />
+    <description>FortiGate SSL-VPN: login exitoso desde $srcip inmediatamente despues de un patron de fuerza bruta. Posible cuenta comprometida.</description>
+    <mitre>
+      <id>T1110</id>
+      <id>T1078</id>
+    </mitre>
+    <group>fortigate_vpn_correlation,attack,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- SESIONES CONCURRENTES DEL MISMO USUARIO DESDE IPs DISTINTAS    -->
+  <!-- (posible uso compartido/robo de credenciales)                  -->
+  <!-- ============================================================= -->
+  <rule id="100606" level="9" frequency="2" timeframe="600">
+    <if_matched_sid>100604</if_matched_sid>
+    <same_field>login</same_field>
+    <different_srcip />
+    <description>FortiGate SSL-VPN: la cuenta "$login" ha iniciado sesion desde direcciones IP distintas en menos de 10 minutos.</description>
+    <mitre>
+      <id>T1078</id>
+    </mitre>
+    <group>fortigate_vpn_concurrent_sessions,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- LOGOUT / DESCONEXION                                           -->
+  <!-- ============================================================= -->
+  <rule id="100607" level="3">
+    <if_sid>100600</if_sid>
+    <field name="action">ssl-logout|tunnel-down</field>
+    <description>FortiGate VPN: sesion finalizada - usuario "$login" ($srcip).</description>
+    <group>fortigate_vpn_logout,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- IPSEC: ERROR DE NEGOCIACION / TUNEL CAIDO                      -->
+  <!-- ============================================================= -->
+  <rule id="100608" level="6">
+    <if_sid>100600</if_sid>
+    <field name="action">negotiate-error|phase1-down|phase2-down</field>
+    <description>FortiGate IPsec: error de negociacion o caida de tunel ($tunneltype) con $srcip.</description>
+    <mitre>
+      <id>T1499</id>
+    </mitre>
+    <group>fortigate_vpn_ipsec_error,availability,</group>
+  </rule>
+
+  <rule id="100609" level="9" frequency="6" timeframe="300">
+    <if_matched_sid>100608</if_matched_sid>
+    <same_srcip />
+    <description>FortiGate IPsec: caidas/errores de negociacion repetidos con $srcip (posible degradacion de enlace o ataque).</description>
+    <group>fortigate_vpn_ipsec_flapping,availability,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- MOTIVO DE FALLO DE LOGIN ESPECIFICO: MFA / TOKEN                -->
+  <!-- ============================================================= -->
+  <rule id="100610" level="7">
+    <if_sid>100601</if_sid>
+    <field name="reason">token is required|invalid token|two-factor authentication failed</field>
+    <description>FortiGate SSL-VPN: fallo de autenticacion multifactor para "$login" desde $srcip.</description>
+    <mitre>
+      <id>T1111</id>
+    </mitre>
+    <group>fortigate_vpn_mfa_fail,</group>
+  </rule>
+
+</group>

@@ -19,9 +19,22 @@ Integración FortiGate FortiOS 7.4 ↔ Wazuh 4.14 / OpenSearch 2.x sobre Oracle 
 - `tests/firewall.log`: 9 eventos de ejemplo (accept, deny, escaneo por
   frecuencia, exfiltración/sesión larga) para validar con `wazuh-logtest`.
 
+## Estado actual — Fase 2 (entregada)
+
+- Decoder `fortigate-vpn` ampliado: ahora reconoce tanto `type="vpn"`
+  (IPsec clásico) como `type="event" subtype="vpn"` (SSL-VPN en FortiOS 7.x),
+  con campos adicionales `logdesc`, `login`, `usergroup`, `dst_host`.
+- `rules/1006-fortigate-vpn.xml`: 10 reglas — login SSL-VPN fallido,
+  fuerza bruta por IP, password spraying por cuenta, login correcto,
+  correlación login-exitoso-tras-fuerza-bruta, sesiones concurrentes del
+  mismo usuario desde IPs distintas, logout, errores/caídas IPsec repetidas,
+  fallo de MFA. MITRE: T1110, T1110.001, T1110.003, T1078, T1111, T1499.
+- `tests/vpn.log`: 13 eventos (fuerza bruta de 5 intentos, login posterior,
+  sesión concurrente desde otra IP, flapping IPsec de 5 errores).
+
 ## Pendiente (fases siguientes)
 
-Los archivos `rules/1006` a `1015` y `1099-fortigate-correlation.xml`,
+Los archivos `rules/1007` a `1015` y `1099-fortigate-correlation.xml`,
 los dashboards `.ndjson` y la documentación completa (`docs/mitre.md`,
 `docs/logid-reference.md`, `docs/troubleshooting.md`, `INSTALL.md`,
 `CHANGELOG.md`, `LICENSE`) **todavía no se han generado** — se irán
@@ -31,7 +44,6 @@ severidad 3–15) para llegar a las 150+ reglas previstas:
 
 | Archivo | Contenido previsto |
 |---|---|
-| `1006-fortigate-vpn.xml` | SSL-VPN / IPsec: login fallido, MFA, geo-anomalías, sesiones concurrentes |
 | `1007-fortigate-ips.xml` | Firmas IPS por severidad, ataques repetidos, CVEs críticos |
 | `1008-fortigate-antivirus.xml` | Detección malware/ransomware, uso de `lists/fortigate-malware` |
 | `1009-fortigate-webfilter.xml` | Categorías bloqueadas, C2/phishing, DLP básico |

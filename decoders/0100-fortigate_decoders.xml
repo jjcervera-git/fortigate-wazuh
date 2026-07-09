@@ -132,11 +132,17 @@
 </decoder>
 
 <!-- ============================================================= -->
-<!-- 4. VPN (type=vpn)                                              -->
+<!-- 4. VPN (type=vpn, IPsec tunnel up/down; o type=event          -->
+<!--    subtype=vpn, SSL-VPN login/logout en FortiOS 7.x)           -->
 <!-- ============================================================= -->
 <decoder name="fortigate-vpn">
   <parent>fortigate</parent>
   <regex offset="after_parent">\.*type="vpn"</regex>
+</decoder>
+
+<decoder name="fortigate-vpn">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="event" subtype="vpn"</regex>
 </decoder>
 
 <decoder name="fortigate-vpn">
@@ -163,6 +169,18 @@
 
   <regex offset="after_parent">\s+reason="([^"]+)"</regex>
   <order>reason</order>
+
+  <regex offset="after_parent">\s+logdesc="([^"]+)"</regex>
+  <order>logdesc</order>
+
+  <regex offset="after_parent">\s+login="([^"]+)"</regex>
+  <order>login</order>
+
+  <regex offset="after_parent">\s+group="([^"]+)"</regex>
+  <order>usergroup</order>
+
+  <regex offset="after_parent">\s+dst_host="([^"]+)"</regex>
+  <order>dst_host</order>
 </decoder>
 
 <!-- ============================================================= -->
