@@ -1,0 +1,46 @@
+<group name="fortigate,fortigate_webfilter,">
+
+  <rule id="100900" level="0">
+    <decoded_as>fortigate-webfilter</decoded_as>
+    <description>FortiGate: evento de filtrado web.</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="100901" level="3">
+    <if_sid>100900</if_sid>
+    <description>FortiGate WebFilter: acceso bloqueado a "$hostname" ($catdesc) desde $srcip.</description>
+    <group>fortigate_webfilter_block,</group>
+  </rule>
+
+  <rule id="100902" level="8">
+    <if_sid>100900</if_sid>
+    <field name="catdesc">Malicious Websites|Phishing|Spam URLs|Botnet|Command and Control</field>
+    <description>FortiGate WebFilter: acceso bloqueado a categoria de alto riesgo "$catdesc" ($hostname) desde $srcip.</description>
+    <mitre>
+      <id>T1566.002</id>
+      <id>T1071</id>
+    </mitre>
+    <group>fortigate_webfilter_highrisk,attack,</group>
+  </rule>
+
+  <rule id="100903" level="11" frequency="4" timeframe="300">
+    <if_matched_sid>100902</if_matched_sid>
+    <same_srcip />
+    <description>FortiGate WebFilter: $srcip ha intentado acceder 4+ veces a sitios maliciosos/phishing en 5 min. Posible equipo comprometido o usuario objetivo de campana de phishing.</description>
+    <mitre>
+      <id>T1566</id>
+    </mitre>
+    <group>fortigate_webfilter_correlation,attack,</group>
+  </rule>
+
+  <rule id="100904" level="5">
+    <if_sid>100900</if_sid>
+    <field name="catdesc">Proxy Avoidance|Anonymizers</field>
+    <description>FortiGate WebFilter: intento de uso de proxy/anonymizer detectado desde $srcip ($hostname).</description>
+    <mitre>
+      <id>T1090</id>
+    </mitre>
+    <group>fortigate_webfilter_evasion,</group>
+  </rule>
+
+</group>

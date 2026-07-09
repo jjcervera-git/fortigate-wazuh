@@ -1,0 +1,40 @@
+<group name="fortigate,fortigate_application,">
+
+  <rule id="101100" level="0">
+    <decoded_as>fortigate-application</decoded_as>
+    <description>FortiGate: evento de Application Control.</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101101" level="4">
+    <if_sid>101100</if_sid>
+    <field name="appcat">P2P|Proxy|Remote.Access</field>
+    <description>FortiGate AppCtrl: uso de aplicacion de categoria "$appcat" detectado ("$app") $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1090</id>
+    </mitre>
+    <group>fortigate_app_risky_category,</group>
+  </rule>
+
+  <rule id="101102" level="7">
+    <if_sid>101100</if_sid>
+    <field name="app" type="pcre2">(?i)(tor|ultrasurf|psiphon|anyconnect.unauthorized|teamviewer|anydesk)</field>
+    <description>FortiGate AppCtrl: aplicacion de acceso remoto/evasion no autorizada "$app" detectada $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1219</id>
+      <id>T1090</id>
+    </mitre>
+    <group>fortigate_app_unauthorized_remote_access,</group>
+  </rule>
+
+  <rule id="101103" level="6">
+    <if_sid>101100</if_sid>
+    <field name="appcat">Cloud.Storage</field>
+    <description>FortiGate AppCtrl: uso de almacenamiento en la nube "$app" detectado desde $srcip. Revisar posible fuga de datos.</description>
+    <mitre>
+      <id>T1567.002</id>
+    </mitre>
+    <group>fortigate_app_cloud_storage,</group>
+  </rule>
+
+</group>

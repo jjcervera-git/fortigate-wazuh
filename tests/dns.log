@@ -1,0 +1,3 @@
+date=2026-07-09 time=15:00:01 devname="FGT-EDGE01" devid="FG100FTK20012345" eventtime=1720537201 tz="+0200" logid="1500032220" type="utm" subtype="dns" level="notice" vd="root" srcip=192.168.1.45 qname="update.microsoft.com" qtype="A"
+date=2026-07-09 time=15:00:05 devname="FGT-EDGE01" devid="FG100FTK20012345" eventtime=1720537205 tz="+0200" logid="1500032220" type="utm" subtype="dns" level="notice" vd="root" srcip=192.168.1.46 qname="malicious.top" qtype="A"
+date=2026-07-09 time=15:00:09 devname="FGT-EDGE01" devid="FG100FTK20012345" eventtime=1720537209 tz="+0200" logid="1500032220" type="utm" subtype="dns" level="notice" vd="root" srcip=192.168.1.47 qname="a1b2c3d4e5f6a7b8c9d0e1f2.tunnelc2.example" qtype="TXT"

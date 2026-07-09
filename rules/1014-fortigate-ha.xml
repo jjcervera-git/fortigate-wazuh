@@ -1,0 +1,45 @@
+<group name="fortigate,fortigate_ha,">
+
+  <rule id="101400" level="0">
+    <decoded_as>fortigate-ha</decoded_as>
+    <description>FortiGate: evento de High Availability.</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101401" level="9">
+    <if_sid>101400</if_sid>
+    <field name="msg" type="pcre2">(?i)(failover|switch.*(master|primary))</field>
+    <description>FortiGate HA: conmutacion (failover) del cluster detectada - $msg.</description>
+    <mitre>
+      <id>T1499</id>
+    </mitre>
+    <group>fortigate_ha_failover,availability,</group>
+  </rule>
+
+  <rule id="101402" level="10">
+    <if_sid>101400</if_sid>
+    <field name="msg" type="pcre2">(?i)(heartbeat.*(lost|down|fail))</field>
+    <description>FortiGate HA: perdida de heartbeat entre nodos del cluster - $msg.</description>
+    <mitre>
+      <id>T1499</id>
+    </mitre>
+    <group>fortigate_ha_heartbeat_lost,availability,</group>
+  </rule>
+
+  <rule id="101403" level="6">
+    <if_sid>101400</if_sid>
+    <field name="msg" type="pcre2">(?i)(member.*(join|add))</field>
+    <description>FortiGate HA: nuevo miembro incorporado al cluster - $msg.</description>
+    <group>fortigate_ha_member_join,</group>
+  </rule>
+
+  <rule id="101404" level="11" frequency="3" timeframe="600">
+    <if_matched_sid>101401</if_matched_sid>
+    <description>FortiGate HA: 3+ conmutaciones de cluster en 10 min. Cluster inestable, posible fallo de hardware/enlace o ataque de disponibilidad.</description>
+    <mitre>
+      <id>T1499</id>
+    </mitre>
+    <group>fortigate_ha_flapping,availability,</group>
+  </rule>
+
+</group>

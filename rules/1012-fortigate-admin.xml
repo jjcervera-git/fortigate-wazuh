@@ -1,0 +1,66 @@
+<group name="fortigate,fortigate_admin,">
+
+  <rule id="101200" level="0">
+    <decoded_as>fortigate-admin</decoded_as>
+    <description>FortiGate: evento administrativo/de gestion.</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101201" level="4">
+    <if_sid>101200</if_sid>
+    <field name="status">success</field>
+    <description>FortiGate Admin: login administrativo correcto - usuario "$user" desde $srcip via $ui.</description>
+    <group>fortigate_admin_login_success,gdpr_IV_30.1.g,pci_dss_10.2.5,</group>
+  </rule>
+
+  <rule id="101202" level="6">
+    <if_sid>101200</if_sid>
+    <field name="status">failed|failure</field>
+    <description>FortiGate Admin: login administrativo fallido - usuario "$user" desde $srcip via $ui.</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+    <group>fortigate_admin_login_fail,authentication_failed,pci_dss_10.2.4,</group>
+  </rule>
+
+  <rule id="101203" level="11" frequency="4" timeframe="180">
+    <if_matched_sid>101202</if_matched_sid>
+    <same_srcip />
+    <description>FortiGate Admin: posible ataque de fuerza bruta contra el panel de administracion desde $srcip.</description>
+    <mitre>
+      <id>T1110.001</id>
+    </mitre>
+    <group>fortigate_admin_bruteforce,attack,pci_dss_11.4,</group>
+  </rule>
+
+  <rule id="101204" level="12">
+    <if_sid>101201</if_sid>
+    <list field="user" lookup="not_match_key">etc/lists/fortigate-admins</list>
+    <description>FortiGate Admin: login correcto de la cuenta "$user", NO incluida en la lista de administradores autorizados. Verificar legitimidad.</description>
+    <mitre>
+      <id>T1078</id>
+    </mitre>
+    <group>fortigate_admin_unauthorized_account,attack,</group>
+  </rule>
+
+  <rule id="101205" level="8">
+    <if_sid>101200</if_sid>
+    <field name="method">http|telnet</field>
+    <description>FortiGate Admin: acceso administrativo por protocolo no cifrado ($method) desde $srcip - usuario "$user".</description>
+    <mitre>
+      <id>T1040</id>
+    </mitre>
+    <group>fortigate_admin_insecure_protocol,pci_dss_2.3,</group>
+  </rule>
+
+  <rule id="101206" level="9">
+    <if_sid>101200</if_sid>
+    <field name="reason" type="pcre2">(?i)(config|policy|firmware|factory.reset)</field>
+    <description>FortiGate Admin: cambio de configuracion realizado por "$user" desde $srcip: $reason.</description>
+    <mitre>
+      <id>T1562</id>
+    </mitre>
+    <group>fortigate_admin_config_change,pci_dss_10.2.7,</group>
+  </rule>
+
+</group>

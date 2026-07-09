@@ -48,27 +48,54 @@ Integración FortiGate FortiOS 7.4 ↔ Wazuh 4.14 / OpenSearch 2.x sobre Oracle 
 - `tests/ips.log`: 7 eventos (RCE crítico no bloqueado, ataques web
   repetidos desde el mismo origen, tráfico C2 detectado).
 
-## Pendiente (fases siguientes)
+## Estado actual — Fase 4 (entregada): categorías 1008–1015 y 1099
 
-Los archivos `rules/1008` a `1015` y `1099-fortigate-correlation.xml`,
-los dashboards `.ndjson` y la documentación completa (`docs/mitre.md`,
-`docs/logid-reference.md`, `docs/troubleshooting.md`, `INSTALL.md`,
-`CHANGELOG.md`, `LICENSE`) **todavía no se han generado** — se irán
-construyendo módulo a módulo sobre esta misma base de decoders, siguiendo
-el mismo patrón (regex `after_parent` + `<order>`, MITRE, niveles de
-severidad 3–15) para llegar a las 150+ reglas previstas:
+Todos los ficheros de `rules/` y sus decoders correspondientes están
+completos y **validados con `xmllint`** (sintaxis XML correcta) y **sin IDs
+de regla duplicados**:
 
-| Archivo | Contenido previsto |
-|---|---|
-| `1008-fortigate-antivirus.xml` | Detección malware/ransomware, uso de `lists/fortigate-malware` |
-| `1009-fortigate-webfilter.xml` | Categorías bloqueadas, C2/phishing, DLP básico |
-| `1010-fortigate-dns.xml` | DNS a dominios maliciosos, DGA, tunneling DNS |
-| `1011-fortigate-application.xml` | Apps de alto riesgo (P2P, proxies, VPN no autorizadas) |
-| `1012-fortigate-admin.xml` | Login admin fuera de `lists/fortigate-admins`, cambios de config |
-| `1013-fortigate-system.xml` | Reinicios, actualizaciones de firmware, fallos de licencia |
-| `1014-fortigate-ha.xml` | Failover HA, pérdida de heartbeat |
-| `1015-fortigate-dos.xml` | Ataques DoS/DDoS detectados por FortiGate |
-| `1099-fortigate-correlation.xml` | Correlación cross-módulo (ej. IPS + VPN + admin) |
+| Archivo | Reglas | Contenido |
+|---|---|---|
+| `1005-fortigate-firewall.xml` | 11 | accept/deny, escaneo, riesgo FortiGuard, geo-IOC, exfiltración, sesiones largas, correlación interna |
+| `1006-fortigate-vpn.xml` | 11 | SSL-VPN/IPsec: fuerza bruta, password spraying, sesiones concurrentes, MFA, flapping IPsec |
+| `1007-fortigate-ips.xml` | 13 | severidad, bloqueado/no bloqueado, recon, explotación persistente, web/C2/fuerza bruta, IOC |
+| `1008-fortigate-antivirus.xml` | 6 | detección, malware crítico (lista), ransomware, reinfección, origen de descarga |
+| `1009-fortigate-webfilter.xml` | 5 | bloqueo, categorías de alto riesgo, phishing repetido, evasión/proxy |
+| `1010-fortigate-dns.xml` | 5 | TLD de riesgo, DGA/tunneling, volumen anómalo, tipos de consulta inusuales |
+| `1011-fortigate-application.xml` | 4 | categorías de riesgo, acceso remoto no autorizado, almacenamiento en la nube |
+| `1012-fortigate-admin.xml` | 7 | login OK/fallido, fuerza bruta, cuenta no autorizada, protocolo inseguro, cambio de config |
+| `1013-fortigate-system.xml` | 5 | reboot, firmware, licencia, recursos críticos, factory reset |
+| `1014-fortigate-ha.xml` | 5 | failover, heartbeat perdido, nuevo miembro, flapping de cluster |
+| `1015-fortigate-dos.xml` | 6 | anomalía, bloqueado/no bloqueado, flood, DoS crítico repetido |
+| `1099-fortigate-correlation.xml` | 7 | 7 cadenas de ataque cruzadas entre módulos (ver abajo) |
+| **Total** | **85** | |
+
+**Correlaciones cruzadas (1099)**: recon→exploit, exploit-IPS→VPN,
+malware→C2-DNS, admin-no-autorizado→cambio-config, DoS→failover-HA,
+fuerza-bruta-VPN+admin (mismo IP), phishing→malware (cadena de infección
+completa).
+
+Se han añadido también los decoders que faltaban: `fortigate-dos`
+(`type="anomaly"`) y ampliaciones de `fortigate-vpn` e `fortigate-ips`.
+Todos los `tests/*.log` están creados (uno por categoría) y listos para
+`wazuh-logtest`.
+
+> **Importante — orden de carga**: `1013-fortigate-system.xml` reutiliza la
+> regla base `101200` de `1012-fortigate-admin.xml`, y `1099-fortigate-
+> correlation.xml` reutiliza reglas de todos los demás ficheros. Si usas
+> `<rule_dir>` en `ossec.conf` esto no es un problema (Wazuh carga primero
+> todas las reglas y resuelve referencias después), pero si copias los
+> ficheros manualmente asegúrate de que **todos** estén presentes antes de
+> reiniciar el manager.
+
+## Pendiente
+
+- 5 dashboards `.ndjson` (Overview, Threats, VPN, IPS, Administration)
+- `docs/mitre.md`, `docs/logid-reference.md`, `docs/troubleshooting.md`
+- `INSTALL.md`, `CHANGELOG.md`, `LICENSE`
+- Para llegar a las 150+ reglas previstas originalmente: ampliar
+  granularidad (más firmas IPS por categoría, más anomalías DoS
+  específicas por tipo de flood, reglas por franja horaria en VPN, etc.)
 
 ## Cómo probar (Wazuh manager en Oracle Linux 9.5)
 

@@ -1,0 +1,60 @@
+<group name="fortigate,fortigate_antivirus,">
+
+  <rule id="100800" level="0">
+    <decoded_as>fortigate-antivirus</decoded_as>
+    <description>FortiGate: evento de Antivirus/Sandbox.</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="100801" level="9">
+    <if_sid>100800</if_sid>
+    <description>FortiGate AV: malware detectado "$virus" en archivo "$filename" $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1204</id>
+      <id>T1105</id>
+    </mitre>
+    <group>fortigate_av_detection,pci_dss_5.1,</group>
+  </rule>
+
+  <rule id="100802" level="14">
+    <if_sid>100801</if_sid>
+    <list field="virus" lookup="match_key">etc/lists/fortigate-malware</list>
+    <description>FortiGate AV: malware de alta severidad "$virus" (lista critica) en "$filename" $srcip -> $dstip. Requiere respuesta inmediata.</description>
+    <mitre>
+      <id>T1204</id>
+      <id>T1486</id>
+    </mitre>
+    <group>fortigate_av_critical,attack,pci_dss_5.1,</group>
+  </rule>
+
+  <rule id="100803" level="13">
+    <if_sid>100801</if_sid>
+    <field name="virus" type="pcre2">(?i)(ransom|crypt|locker)</field>
+    <description>FortiGate AV: posible ransomware detectado "$virus" en "$filename" $srcip -> $dstip.</description>
+    <mitre>
+      <id>T1486</id>
+    </mitre>
+    <group>fortigate_av_ransomware,attack,</group>
+  </rule>
+
+  <rule id="100804" level="12" frequency="3" timeframe="600">
+    <if_matched_sid>100801</if_matched_sid>
+    <same_dstip />
+    <description>FortiGate AV: 3+ detecciones de malware distintas contra el mismo host $dstip en 10 min. Posible host comprometido.</description>
+    <mitre>
+      <id>T1204</id>
+    </mitre>
+    <group>fortigate_av_repeated,attack,</group>
+  </rule>
+
+  <rule id="100805" level="6">
+    <if_sid>100801</if_sid>
+    <field name="url" type="pcre2">.+</field>
+    <description>FortiGate AV: malware "$virus" descargado desde URL $url por $srcip.</description>
+    <mitre>
+      <id>T1105</id>
+    </mitre>
+    <group>fortigate_av_download,</group>
+  </rule>
+
+</group>

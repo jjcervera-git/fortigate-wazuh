@@ -1,0 +1,59 @@
+<group name="fortigate,fortigate_system,">
+
+  <!--
+    NOTA: en FortiOS, los eventos de sistema (reboot, firmware, licencia,
+    recursos) comparten type="event" subtype="system" con los eventos de
+    administracion, por lo que decodifican como "fortigate-admin"
+    (ver 1012-fortigate-admin.xml, regla base 101200). Este archivo anade
+    reglas especificas de sistema sobre esa misma base, diferenciando por
+    el contenido de "msg".
+  -->
+
+  <rule id="101301" level="5">
+    <if_sid>101200</if_sid>
+    <field name="msg" type="pcre2">(?i)(reboot|restart|shutdown)</field>
+    <description>FortiGate System: reinicio/apagado del dispositivo detectado - $msg.</description>
+    <mitre>
+      <id>T1529</id>
+    </mitre>
+    <group>fortigate_system_reboot,availability,</group>
+  </rule>
+
+  <rule id="101302" level="6">
+    <if_sid>101200</if_sid>
+    <field name="msg" type="pcre2">(?i)(firmware|upgrade|downgrade)</field>
+    <description>FortiGate System: cambio de firmware detectado - $msg.</description>
+    <mitre>
+      <id>T1601</id>
+    </mitre>
+    <group>fortigate_system_firmware,pci_dss_10.2.7,</group>
+  </rule>
+
+  <rule id="101303" level="8">
+    <if_sid>101200</if_sid>
+    <field name="msg" type="pcre2">(?i)(license|contract).*(expir|invalid)</field>
+    <description>FortiGate System: problema de licencia/contrato FortiGuard - $msg.</description>
+    <group>fortigate_system_license,</group>
+  </rule>
+
+  <rule id="101304" level="9">
+    <if_sid>101200</if_sid>
+    <field name="msg" type="pcre2">(?i)(cpu|memory|disk).*(high|full|critical)</field>
+    <description>FortiGate System: uso critico de recursos del dispositivo - $msg.</description>
+    <mitre>
+      <id>T1499</id>
+    </mitre>
+    <group>fortigate_system_resources,availability,</group>
+  </rule>
+
+  <rule id="101305" level="7">
+    <if_sid>101200</if_sid>
+    <field name="msg" type="pcre2">(?i)(factory.reset|configuration.*(clear|erase|reset))</field>
+    <description>FortiGate System: restablecimiento de fabrica / borrado de configuracion - $msg.</description>
+    <mitre>
+      <id>T1485</id>
+    </mitre>
+    <group>fortigate_system_factory_reset,attack,</group>
+  </rule>
+
+</group>

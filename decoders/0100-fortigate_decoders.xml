@@ -372,3 +372,40 @@
   <regex offset="after_parent">\s+msg="([^"]+)"</regex>
   <order>msg</order>
 </decoder>
+
+<!-- ============================================================= -->
+<!-- 12. DOS / ANOMALY (type=anomaly)                               -->
+<!-- ============================================================= -->
+<decoder name="fortigate-dos">
+  <parent>fortigate</parent>
+  <regex offset="after_parent">\.*type="anomaly"</regex>
+</decoder>
+
+<decoder name="fortigate-dos">
+  <parent>fortigate-dos</parent>
+  <use_own_name>yes</use_own_name>
+
+  <regex offset="after_parent">\s+srcip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>srcip</order>
+
+  <regex offset="after_parent">\s+dstip=(\d+\.\d+\.\d+\.\d+)</regex>
+  <order>dstip</order>
+
+  <regex offset="after_parent">\s+attack="([^"]+)"</regex>
+  <order>attack</order>
+
+  <regex offset="after_parent">\s+srcintf="([^"]+)"</regex>
+  <order>srcintf</order>
+
+  <regex offset="after_parent">\s+count=(\d+)</regex>
+  <order>count</order>
+
+  <regex offset="after_parent">\s+threshold\(?\/?[a-z]*\)?=(\d+)</regex>
+  <order>threshold</order>
+
+  <regex offset="after_parent">\s+action="([^"]+)"</regex>
+  <order>dos_action</order>
+
+  <regex offset="after_parent">\s+severity="([^"]+)"</regex>
+  <order>severity</order>
+</decoder>

@@ -1,0 +1,4 @@
+date=2026-07-09 time=18:00:01 devname="FGT-EDGE01" devid="FG100FTK20012345" eventtime=1720548001 tz="+0200" logid="0104032002" type="event" subtype="ha" level="critical" vd="root" msg="HA heartbeat lost with peer FGT-EDGE02"
+date=2026-07-09 time=18:00:15 devname="FGT-EDGE01" devid="FG100FTK20012345" eventtime=1720548015 tz="+0200" logid="0104032003" type="event" subtype="ha" level="critical" vd="root" msg="HA failover: switch to master"
+date=2026-07-09 time=18:03:00 devname="FGT-EDGE01" devid="FG100FTK20012345" eventtime=1720548180 tz="+0200" logid="0104032003" type="event" subtype="ha" level="critical" vd="root" msg="HA failover: switch to master"
+date=2026-07-09 time=18:06:00 devname="FGT-EDGE01" devid="FG100FTK20012345" eventtime=1720548360 tz="+0200" logid="0104032003" type="event" subtype="ha" level="critical" vd="root" msg="HA failover: switch to master"

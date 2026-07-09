@@ -1,0 +1,110 @@
+<group name="fortigate,fortigate_correlation,">
+
+  <!-- ============================================================= -->
+  <!-- RECON -> EXPLOTACION: escaneo de firewall seguido de ataque IPS -->
+  <!-- ============================================================= -->
+  <rule id="109901" level="14" frequency="1" timeframe="600">
+    <if_matched_sid>100503</if_matched_sid>
+    <if_sid>100700</if_sid>
+    <same_srcip />
+    <description>Correlacion FortiGate: $srcip realizo un escaneo de puertos y a continuacion disparo una firma IPS. Patron de ataque en dos fases (recon + explotacion).</description>
+    <mitre>
+      <id>T1595</id>
+      <id>T1190</id>
+    </mitre>
+    <group>fortigate_correlation_recon_exploit,attack,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- EXPLOTACION IPS -> ACCESO VPN EXITOSO (posible pivote)         -->
+  <!-- ============================================================= -->
+  <rule id="109902" level="15" frequency="1" timeframe="900">
+    <if_matched_sid>100704</if_matched_sid>
+    <if_sid>100604</if_sid>
+    <same_srcip />
+    <description>Correlacion FortiGate: firma IPS critica desde $srcip seguida de un login VPN exitoso desde la misma IP. Posible explotacion seguida de acceso remoto legitimo/comprometido.</description>
+    <mitre>
+      <id>T1190</id>
+      <id>T1133</id>
+    </mitre>
+    <group>fortigate_correlation_exploit_vpn,attack,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- INFECCION MALWARE -> POSIBLE C2 (DNS DGA/tunneling)            -->
+  <!-- ============================================================= -->
+  <rule id="109903" level="15" frequency="1" timeframe="900">
+    <if_matched_sid>100802</if_matched_sid>
+    <if_sid>101002</if_sid>
+    <same_srcip />
+    <description>Correlacion FortiGate: host $srcip descargo malware de alta severidad y a continuacion genero consultas DNS de tipo DGA/tunneling. Fuerte indicio de C2 activo.</description>
+    <mitre>
+      <id>T1486</id>
+      <id>T1071.004</id>
+      <id>T1568.002</id>
+    </mitre>
+    <group>fortigate_correlation_malware_c2,attack,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- ADMIN NO AUTORIZADO -> CAMBIO DE CONFIGURACION                 -->
+  <!-- ============================================================= -->
+  <rule id="109904" level="15" frequency="1" timeframe="600">
+    <if_matched_sid>101204</if_matched_sid>
+    <if_sid>101206</if_sid>
+    <same_srcip />
+    <description>Correlacion FortiGate: cuenta administrativa NO autorizada "$user" desde $srcip realizo un cambio de configuracion. Posible compromiso del firewall.</description>
+    <mitre>
+      <id>T1078</id>
+      <id>T1562</id>
+    </mitre>
+    <group>fortigate_correlation_rogue_admin,attack,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- DOS NO BLOQUEADO -> FAILOVER DE CLUSTER HA                     -->
+  <!-- ============================================================= -->
+  <rule id="109905" level="15" frequency="1" timeframe="300">
+    <if_matched_sid>101503</if_matched_sid>
+    <if_sid>101401</if_sid>
+    <description>Correlacion FortiGate: ataque DoS no bloqueado seguido de una conmutacion (failover) del cluster HA. El ataque de disponibilidad pudo haber forzado el failover.</description>
+    <mitre>
+      <id>T1498</id>
+      <id>T1499</id>
+    </mitre>
+    <group>fortigate_correlation_dos_failover,availability,attack,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- FUERZA BRUTA VPN + FUERZA BRUTA ADMIN DESDE LA MISMA IP        -->
+  <!-- (mismo actor probando multiples vectores de acceso)            -->
+  <!-- ============================================================= -->
+  <rule id="109906" level="14" frequency="1" timeframe="900">
+    <if_matched_sid>100602</if_matched_sid>
+    <if_sid>101203</if_sid>
+    <same_srcip />
+    <description>Correlacion FortiGate: $srcip realizo fuerza bruta contra VPN y contra el panel de administracion. Actor probando multiples vectores de acceso al mismo dispositivo.</description>
+    <mitre>
+      <id>T1110</id>
+      <id>T1133</id>
+    </mitre>
+    <group>fortigate_correlation_multivector_bruteforce,attack,</group>
+  </rule>
+
+  <!-- ============================================================= -->
+  <!-- WEBFILTER PHISHING/MALICIOUS -> DESCARGA DE MALWARE DETECTADA  -->
+  <!-- ============================================================= -->
+  <rule id="109907" level="14" frequency="1" timeframe="300">
+    <if_matched_sid>100902</if_matched_sid>
+    <if_sid>100801</if_sid>
+    <same_srcip />
+    <description>Correlacion FortiGate: $srcip accedio a un sitio malicioso/phishing y a continuacion se detecto malware descargado. Cadena de infeccion completa observada.</description>
+    <mitre>
+      <id>T1566</id>
+      <id>T1204</id>
+      <id>T1105</id>
+    </mitre>
+    <group>fortigate_correlation_infection_chain,attack,</group>
+  </rule>
+
+</group>
